@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -47,85 +46,35 @@ var zoneDict map[int]*Attribute = nil
 //	}
 //}
 
-//判断是否是合法的电话，只判断是纯数字，并且长度不超过16
-func checkIsPhoneNumber(str string) bool {
-	if len(str) > 16 {
-		return false
-	}
-
-	matched, _ := regexp.MatchString(`^\d+`, str)
-	return matched
-}
-
 //400开头的固定10位，这里不查
-//95001这种的一般5位，还有10086这种可以带区号
+//95001这种的一般5/6位，还有10086这种可以带区号
 //服务类最少三位，比如110,114,但是一般都要加区号
 //手机号固定11位
 //我国的固定电话的区号为一般为4位，少数为3位（如北京，上海等）；而电话号码一般为7位或8位。
 //所以，拨打国内固定电话，一般为11位或12位，而拨打本地固定电话只需要输入7位或8位，因为不需要拨打区号。
-func GetAttr(phone string) (Attribute, error) {
-	var res Attribute
-	if prefixDict == nil || zoneDict == nil {
-		return res, fmt.Errorf("none init do")
-	}
 
-	if !checkIsPhoneNumber(phone) {
-		return res, fmt.Errorf("not phone number")
+// GetAttrByMobilePhonePrefix 根据手机号前7位获取属性
+func GetAttrByMobilePhonePrefix(prefix string) (Attribute, error) {
+	if len(prefix) != 7 {
+		return Attribute{}, fmt.Errorf("prefix length must be 7")
 	}
-
-	phone = strings.TrimLeft(phone, "0")
-	if phone[:2] == "86" {
-		phone = phone[2:]
-		phone = strings.TrimLeft(phone, "0")
+	attr, find := prefixDict[prefix]
+	if find {
+		return *attr, nil
 	}
-
-	//20110=区号+短服务号
-	if len(phone) < 5 {
-		return res, fmt.Errorf("number length error")
-	}
-	if len(phone) > 11 {
-		return res, fmt.Errorf("number length error")
-	}
-
-	//2区号+8固话||3区号+7固话||更短的服务号
-	if len(phone) <= 10 {
-		zcode, _ := strconv.ParseInt(phone[:2], 10, 32)
-		attr, find := zoneDict[int(zcode)]
-		if find {
-			return *attr, nil
-		}
-		zcode, _ = strconv.ParseInt(phone[:3], 10, 32)
-		attr, find = zoneDict[int(zcode)]
-		if find {
-			return *attr, nil
-		}
-		return res, fmt.Errorf("invalid number")
-	}
-
-	//3区号+8固话
-	if len(phone) == 11 && phone[0] != '1' {
-		zcode, _ := strconv.ParseInt(phone[:3], 10, 32)
-		attr, find := zoneDict[int(zcode)]
-		if find {
-			return *attr, nil
-		}
-		return res, fmt.Errorf("invalid number")
-	}
-
-	//手机
-	if len(phone) == 11 && phone[0] == '1' {
-		prefix := phone[:7]
-		attr, find := prefixDict[prefix]
-		if find {
-			return *attr, nil
-		}
-		return res, fmt.Errorf("invalid number")
-	}
-
-	return res, fmt.Errorf("invalid number")
+	return Attribute{}, fmt.Errorf("invalid prefix %s", prefix)
 }
 
-//filePath支持csv和gz压缩包
+// GetAttrByAreaCode 根据固话区号获取属性
+func GetAttrByAreaCode(zcode int) (Attribute, error) {
+	attr, find := zoneDict[zcode]
+	if find {
+		return *attr, nil
+	}
+	return Attribute{}, fmt.Errorf("invalid areaCode %d", zcode)
+}
+
+// InitFromFile filePath支持csv和gz压缩包
 func InitFromFile(filePath string) error {
 	fileName := filePath
 	file, err := os.Open(fileName)
