@@ -2,9 +2,11 @@ package gphoneAttr
 
 import (
 	"bufio"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -55,9 +57,10 @@ var zoneDict map[int]*Attribute = nil
 
 // GetAttrByMobilePhonePrefix 根据手机号前7位获取属性
 func GetAttrByMobilePhonePrefix(prefix string) (Attribute, error) {
-	if len(prefix) != 7 {
-		return Attribute{}, fmt.Errorf("prefix length must be 7")
+	if len(prefix) < 7 {
+		return Attribute{}, fmt.Errorf("prefix length too short")
 	}
+	prefix = prefix[:7]
 	attr, find := prefixDict[prefix]
 	if find {
 		return *attr, nil
@@ -75,17 +78,30 @@ func GetAttrByAreaCode(zcode int) (Attribute, error) {
 }
 
 // InitFromFile filePath支持csv和gz压缩包
+//格式：3位前缀|7位前缀|省份|市|运营商|邮编|区号|Cid
 func InitFromFile(filePath string) error {
-	fileName := filePath
-	file, err := os.Open(fileName)
+	ext := strings.ToLower(path.Ext(filePath))
+	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 	defer file.Close()
 
+	var reader *bufio.Reader
+	if ext == ".gzip" || (ext == ".gz" && !strings.Contains(filePath, ".tar")) {
+		// 创建gzip.Reader
+		gr, err := gzip.NewReader(file)
+		if err != nil {
+			return err
+		}
+		defer gr.Close()
+		reader = bufio.NewReader(gr)
+	} else {
+		reader = bufio.NewReader(file)
+	}
+
 	var line string
-	reader := bufio.NewReader(file)
 	dict := make(map[string]*Attribute, 60*10000)
 	for {
 		line, err = reader.ReadString('\n')
@@ -117,6 +133,9 @@ func InitFromFile(filePath string) error {
 			isp = 3
 		} else {
 			isp = 9
+		}
+		if len(ispName) == 0 || len(sarr[5]) == 0 || len(sarr[6]) == 0 || len(sarr[7]) == 0 {
+			fmt.Printf("line wrong format:%s\n", line)
 		}
 		dict[sarr[1]] = &Attribute{
 			Province: sarr[2],
