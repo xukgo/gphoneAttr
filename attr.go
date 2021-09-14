@@ -123,6 +123,15 @@ func InitFromFile(filePath string) error {
 			fmt.Println("line format wrong:", line)
 			continue
 		}
+		sarr[0] = strings.TrimSpace(sarr[0])
+		sarr[1] = strings.TrimSpace(sarr[1])
+		sarr[2] = strings.TrimSpace(sarr[2])
+		sarr[3] = strings.TrimSpace(sarr[3])
+		sarr[4] = strings.TrimSpace(sarr[4])
+		sarr[5] = strings.TrimSpace(sarr[5])
+		sarr[6] = strings.TrimSpace(sarr[6])
+		sarr[7] = strings.TrimSpace(sarr[7])
+
 		ispName := sarr[4]
 		isp := 0
 		if strings.Index(ispName, "移动") >= 0 {
