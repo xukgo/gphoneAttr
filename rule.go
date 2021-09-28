@@ -37,7 +37,7 @@ func GetPhoneProperty(number string) (PhoneProperty, error) {
 	}
 
 	number = strings.TrimLeft(number, "0")
-	if number[:2] == "86" {
+	if len(number) > 2 && number[:2] == "86" {
 		number = number[2:]
 		number = strings.TrimLeft(number, "0")
 	}
