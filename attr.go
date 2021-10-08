@@ -2,11 +2,8 @@ package gphoneAttr
 
 import (
 	"bufio"
-	"compress/gzip"
 	"fmt"
 	"io"
-	"os"
-	"path"
 	"strconv"
 	"strings"
 )
@@ -79,28 +76,31 @@ func GetAttrByAreaCode(zcode int) (Attribute, error) {
 
 // InitFromFile filePath支持csv和gz压缩包
 //格式：3位前缀|7位前缀|省份|市|运营商|邮编|区号|Cid
-func InitFromFile(filePath string) error {
-	ext := strings.ToLower(path.Ext(filePath))
-	file, err := os.Open(filePath)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-	defer file.Close()
+func InitFromReader(srcReader io.Reader) error {
+	//ext := strings.ToLower(path.Ext(filePath))
+	//file, err := os.Open(filePath)
+	//if err != nil {
+	//	fmt.Println(err)
+	//	return err
+	//}
+	//defer file.Close()
+	//
+	//var reader *bufio.Reader
+	//if ext == ".gzip" || (ext == ".gz" && !strings.Contains(filePath, ".tar")) {
+	//	// 创建gzip.Reader
+	//	gr, err := gzip.NewReader(file)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	defer gr.Close()
+	//	reader = bufio.NewReader(gr)
+	//} else {
+	//	reader = bufio.NewReader(file)
+	//}
 
+	var err error
 	var reader *bufio.Reader
-	if ext == ".gzip" || (ext == ".gz" && !strings.Contains(filePath, ".tar")) {
-		// 创建gzip.Reader
-		gr, err := gzip.NewReader(file)
-		if err != nil {
-			return err
-		}
-		defer gr.Close()
-		reader = bufio.NewReader(gr)
-	} else {
-		reader = bufio.NewReader(file)
-	}
-
+	reader = bufio.NewReader(srcReader)
 	var line string
 	dict := make(map[string]*Attribute, 60*10000)
 	for {
