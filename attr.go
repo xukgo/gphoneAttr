@@ -13,37 +13,16 @@ type Attribute struct {
 	Province string `json:"province"`
 	City     string `json:"city"`
 
-	//运营商，0未初始化1移动2电信3联通9虚拟运营商
+	//运营商，0未初始化 1移动 2电信 3联通 9虚拟运营商
 	Isp      int    `json:"isp,omitempty"`
 	IspName  string `json:"ispName,omitempty"`
 	ZipCode  string `json:"zipCode"`
-	ZoneCode string `json:"zoneCode"`
+	ZoneCode int    `json:"zoneCode"`
 	Cid      string `json:"cid"`
 }
 
 var prefixDict map[string]*Attribute = nil
 var zoneDict map[int]*Attribute = nil
-
-//func main() {
-//	fmt.Println("hello world")
-//	InitFromFile("./prefix.csv")
-//	printAttr("15986400521")
-//	printAttr("008615986400521")
-//	printAttr("0086020110")
-//	printAttr("7815986400521")
-//	printAttr("20114")
-//	printAttr("008699010086")
-//	printAttr("02010000")
-//}
-//
-//func printAttr(phone string) {
-//	attr, err := GetAttr(phone)
-//	if err != nil {
-//		fmt.Printf("%s:%s\n", phone, err)
-//	} else {
-//		fmt.Printf("%s:%s %s\n", phone, attr.IspName, attr.City)
-//	}
-//}
 
 //400开头的固定10位，这里不查
 //95001这种的一般5/6位，还有10086这种可以带区号
@@ -74,30 +53,29 @@ func GetAttrByAreaCode(zcode int) (Attribute, error) {
 	return Attribute{}, fmt.Errorf("invalid areaCode %d", zcode)
 }
 
+// GetAttrByAreaCode 根据固话区号获取属性
+func GetAreaCode(phone string) (int, error) {
+	phoneProperty, err := GetPhoneProperty(phone)
+	if err != nil {
+		return 0, err
+	}
+	if phoneProperty.AreaCode > 0 {
+		return phoneProperty.AreaCode, nil
+	}
+	//400和95的号码确实没有区号一说，返回区号0
+	if phoneProperty.Type != MOBILEPHONE_NUMBER {
+		return 0, nil
+	}
+	attr, err := GetAttrByMobilePhonePrefix(phone)
+	if err != nil {
+		return 0, err
+	}
+	return attr.ZoneCode, nil
+}
+
 // InitFromFile filePath支持csv和gz压缩包
 //格式：3位前缀|7位前缀|省份|市|运营商|邮编|区号|Cid
 func InitFromReader(srcReader io.Reader) error {
-	//ext := strings.ToLower(path.Ext(filePath))
-	//file, err := os.Open(filePath)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return err
-	//}
-	//defer file.Close()
-	//
-	//var reader *bufio.Reader
-	//if ext == ".gzip" || (ext == ".gz" && !strings.Contains(filePath, ".tar")) {
-	//	// 创建gzip.Reader
-	//	gr, err := gzip.NewReader(file)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	defer gr.Close()
-	//	reader = bufio.NewReader(gr)
-	//} else {
-	//	reader = bufio.NewReader(file)
-	//}
-
 	var err error
 	var reader *bufio.Reader
 	reader = bufio.NewReader(srcReader)
@@ -146,13 +124,20 @@ func InitFromReader(srcReader io.Reader) error {
 		if len(ispName) == 0 || len(sarr[5]) == 0 || len(sarr[6]) == 0 || len(sarr[7]) == 0 {
 			fmt.Printf("line wrong format:%s\n", line)
 		}
+		areaCode, err := strconv.ParseInt(strings.TrimLeft(sarr[6], "0"), 10, 64)
+		if err != nil {
+			return err
+		}
+		if areaCode <= 0 {
+			return fmt.Errorf("解析区号出错:%s source:%s", sarr[6], line)
+		}
 		dict[sarr[1]] = &Attribute{
 			Province: sarr[2],
 			City:     sarr[3],
 			Isp:      isp,
 			IspName:  sarr[4],
 			ZipCode:  sarr[5],
-			ZoneCode: sarr[6],
+			ZoneCode: int(areaCode),
 			Cid:      sarr[7],
 		}
 
@@ -166,12 +151,7 @@ func InitFromReader(srcReader io.Reader) error {
 
 	zdict := make(map[int]*Attribute, 256)
 	for _, v := range dict {
-		zcode, err := strconv.ParseInt(v.ZoneCode, 10, 64)
-		if err != nil {
-			fmt.Printf("zoneCode wrong format:%s\n", v.ZoneCode)
-			continue
-		}
-		zdict[int(zcode)] = v
+		zdict[v.ZoneCode] = v
 	}
 	for k, v := range zdict {
 		item := *v
@@ -183,3 +163,24 @@ func InitFromReader(srcReader io.Reader) error {
 	prefixDict = dict
 	return nil
 }
+
+//ext := strings.ToLower(path.Ext(filePath))
+//file, err := os.Open(filePath)
+//if err != nil {
+//	fmt.Println(err)
+//	return err
+//}
+//defer file.Close()
+//
+//var reader *bufio.Reader
+//if ext == ".gzip" || (ext == ".gz" && !strings.Contains(filePath, ".tar")) {
+//	// 创建gzip.Reader
+//	gr, err := gzip.NewReader(file)
+//	if err != nil {
+//		return err
+//	}
+//	defer gr.Close()
+//	reader = bufio.NewReader(gr)
+//} else {
+//	reader = bufio.NewReader(file)
+//}
