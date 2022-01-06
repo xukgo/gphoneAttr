@@ -53,7 +53,7 @@ func GetAttrByAreaCode(zcode int) (Attribute, error) {
 	return Attribute{}, fmt.Errorf("invalid areaCode %d", zcode)
 }
 
-// GetAttrByAreaCode 根据固话区号获取属性
+// GetAreaCode 根据号码获取区号，手机号暂时没有区号数据的返回0
 func GetAreaCode(phone string) (int, error) {
 	phoneProperty, err := GetPhoneProperty(phone)
 	if err != nil {
@@ -66,9 +66,11 @@ func GetAreaCode(phone string) (int, error) {
 	if phoneProperty.Type != MOBILEPHONE_NUMBER {
 		return 0, nil
 	}
+
+	//手机号暂时没有区号数据的返回0
 	attr, err := GetAttrByMobilePhonePrefix(phone)
 	if err != nil {
-		return 0, err
+		return 0, nil
 	}
 	return attr.ZoneCode, nil
 }
