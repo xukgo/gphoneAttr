@@ -16,9 +16,9 @@ var zoneDict map[int]*CityAttributeWithCounter = nil
 func InitFromReader(srcReader io.Reader) error {
 	var err error
 	var line string
-	provinceNameDict := make(map[string]*string, 50)
-	dict := make(map[string]*Attribute, 60*10000)
-	zDict := make(map[string]*CityAttributeWithCounter, 1000)
+	//provinceNameDict := make(map[string]*string, 50)
+	dict := make(map[string]*Attribute, 50*10000)
+	zDict := make(map[string]*CityAttributeWithCounter, 500)
 
 	var reader *bufio.Reader
 	reader = bufio.NewReader(srcReader)
@@ -76,12 +76,13 @@ func InitFromReader(srcReader io.Reader) error {
 			continue
 		}
 
-		_, find := provinceNameDict[province]
-		if !find {
-			provinceNameDict[province] = &province
-		}
+		//_, find := provinceNameDict[province]
+		//if !find {
+		//	provinceNameDict[province] = &province
+		//}
 
 		cityBean := CityAttribute{
+			Province: province,
 			City:     cityName,
 			ZipCode:  zipCode,
 			ZoneCode: areaCode,
@@ -89,7 +90,6 @@ func InitFromReader(srcReader io.Reader) error {
 		}
 		zDict = insertZdict(zDict, cityBean)
 		dict[sarr[1]] = &Attribute{
-			Province:      provinceNameDict[province],
 			Isp:           isp,
 			MainIspName:   &mainIspName,
 			SubIspName:    subIspName,

@@ -2,7 +2,6 @@ package gphoneAttr
 
 type Attribute struct {
 	*CityAttribute
-	Province *string `json:"province"`
 
 	//运营商，0未初始化 1移动 2电信 3联通 4广电 -1错误
 	Isp         int     `json:"isp,omitempty"`
@@ -16,13 +15,17 @@ type CityAttributeWithCounter struct {
 }
 
 type CityAttribute struct {
+	Province string `json:"province"`
 	City     string `json:"city"`
-	ZipCode  string `json:"zipCode"`
-	ZoneCode int    `json:"zoneCode"`
-	Cid      string `json:"cid"`
+	ZipCode  string `json:"zipCode"`  //邮政编码
+	ZoneCode int    `json:"zoneCode"` //区号
+	Cid      string `json:"cid"`      //身份证前6位
 }
 
 func (this *CityAttribute) Equals(target *CityAttribute) bool {
+	if this.Province != target.Province {
+		return false
+	}
 	if this.City != target.City {
 		return false
 	}
