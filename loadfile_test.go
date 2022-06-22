@@ -10,6 +10,21 @@ import (
 
 var currentDir = "/home/hermes/work"
 
+func BenchmarkInitFromReader(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		file, err := os.Open(path.Join(currentDir, "prefix.csv"))
+		if err != nil {
+			b.FailNow()
+		}
+		defer file.Close()
+
+		err = InitFromReader(file)
+		if err != nil {
+			b.FailNow()
+		}
+	}
+}
+
 func TestInitFromCsvFile(t *testing.T) {
 	file, err := os.Open(path.Join(currentDir, "prefix.csv"))
 	if err != nil {

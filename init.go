@@ -3,6 +3,7 @@ package gphoneAttr
 import (
 	"bufio"
 	"fmt"
+	"github.com/xukgo/gsaber/utils/stringUtil"
 	"io"
 	"strconv"
 	"strings"
@@ -21,7 +22,7 @@ func InitFromReader(srcReader io.Reader) error {
 	zDict := make(map[string]*CityAttributeWithCounter, 500)
 
 	var reader *bufio.Reader
-	reader = bufio.NewReader(srcReader)
+	reader = bufio.NewReaderSize(srcReader, 16*1024)
 	for {
 		line, err = reader.ReadString('\n')
 		if err == io.EOF {
@@ -89,11 +90,13 @@ func InitFromReader(srcReader io.Reader) error {
 			Cid:      cid,
 		}
 		zDict = insertZdict(zDict, cityBean)
+		formatBuffZoneCityKey(formatBuff, areaCode, cityName)
+
 		dict[sarr[1]] = &Attribute{
 			Isp:           isp,
 			MainIspName:   &mainIspName,
 			SubIspName:    subIspName,
-			CityAttribute: zDict[formatZoneCityKey(areaCode, cityName)].CityAttribute,
+			CityAttribute: zDict[stringUtil.NoCopyBytes2String(formatBuff)].CityAttribute,
 		}
 	}
 
@@ -119,14 +122,25 @@ func InitFromReader(srcReader io.Reader) error {
 	return nil
 }
 
-func formatZoneCityKey(zoneCode int, city string) string {
-	return fmt.Sprintf("%d:%s", zoneCode, city)
+//func formatZoneCityKey(zoneCode int, city string) string {
+//	return fmt.Sprintf("%d:%s", zoneCode, city)
+//}
+
+var formatBuff []byte = make([]byte, 0, 1024)
+
+func formatBuffZoneCityKey(buff []byte, zoneCode int, city string) {
+	buff = buff[:0]
+	buff = strconv.AppendInt(buff, int64(zoneCode), 10)
+	buff = append(buff, ':')
+	buff = append(buff, stringUtil.NoCopyString2Bytes(city)...)
 }
 
 func insertZdict(dict map[string]*CityAttributeWithCounter, bean CityAttribute) map[string]*CityAttributeWithCounter {
-	key := formatZoneCityKey(bean.ZoneCode, bean.City)
+	formatBuffZoneCityKey(formatBuff, bean.ZoneCode, bean.City)
+	key := stringUtil.NoCopyBytes2String(formatBuff)
 	_, find := dict[key]
 	if !find {
+		key = string(formatBuff)
 		dict[key] = &CityAttributeWithCounter{
 			CityAttribute: &bean,
 			MatchCount:    0,

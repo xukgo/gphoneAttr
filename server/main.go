@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/xukgo/gphoneAttr"
 	"os"
+	"runtime/debug"
 	"time"
 )
 
@@ -12,6 +13,7 @@ func main() {
 	if err != nil {
 		os.Exit(-1)
 	}
+	debug.FreeOSMemory()
 
 	fmt.Println("init done")
 	time.Sleep(time.Hour)
