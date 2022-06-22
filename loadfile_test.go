@@ -1,14 +1,23 @@
 package gphoneAttr
 
 import (
+	"compress/gzip"
+	"os"
 	"path"
 	"testing"
+	"time"
 )
 
-var currentDir = "/mnt/diske/GitProject/Go/gphoneAttr"
+var currentDir = "/home/hermes/work"
 
 func TestInitFromCsvFile(t *testing.T) {
-	err := InitFromFile(path.Join(currentDir, "prefix2020.csv"))
+	file, err := os.Open(path.Join(currentDir, "prefix.csv"))
+	if err != nil {
+		t.FailNow()
+	}
+	defer file.Close()
+
+	err = InitFromReader(file)
 	if err != nil {
 		t.FailNow()
 	}
@@ -20,13 +29,25 @@ func TestInitFromCsvFile(t *testing.T) {
 	if err != nil {
 		t.FailNow()
 	}
-	if attr.City != "广州" || attr.IspName != "中国移动" || attr.ZoneCode != "20" || attr.Cid != "440100" {
+	if attr.City != "广州" || *attr.MainIspName != "中国移动" || attr.ZoneCode != 20 || attr.Cid != "440100" {
 		t.FailNow()
 	}
+	//time.Sleep(time.Minute * 10)
 }
 
 func TestInitFromGzFile(t *testing.T) {
-	err := InitFromFile(path.Join(currentDir, "prefix2020.csv.gz"))
+	file, err := os.Open(path.Join(currentDir, "prefix.csv.gz"))
+	if err != nil {
+		t.FailNow()
+	}
+	defer file.Close()
+	gr, err := gzip.NewReader(file)
+	if err != nil {
+		t.FailNow()
+	}
+	defer gr.Close()
+
+	err = InitFromReader(gr)
 	if err != nil {
 		t.FailNow()
 	}
@@ -38,7 +59,8 @@ func TestInitFromGzFile(t *testing.T) {
 	if err != nil {
 		t.FailNow()
 	}
-	if attr.City != "广州" || attr.IspName != "中国移动" || attr.ZoneCode != "20" || attr.Cid != "440100" {
+	if attr.City != "广州" || *attr.MainIspName != "中国移动" || attr.ZoneCode != 20 || attr.Cid != "440100" {
 		t.FailNow()
 	}
+	time.Sleep(time.Hour)
 }

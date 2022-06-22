@@ -30,6 +30,7 @@ type PhoneProperty struct {
 	FullNumber string //过滤后的号码，比如86xxx会把86删掉,区号前面保证只有一个0
 }
 
+// GetPhoneProperty 这个方法不需要加载文件查找，所以手机号码是没有区号的，固话可以分离出区号
 func GetPhoneProperty(number string) (PhoneProperty, error) {
 	res := PhoneProperty{}
 	if !CheckIsPhoneNumber(number) {
