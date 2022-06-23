@@ -90,13 +90,13 @@ func InitFromReader(srcReader io.Reader) error {
 			Cid:      cid,
 		}
 		zDict = insertZdict(zDict, cityBean)
-		formatBuffZoneCityKey(formatBuff, areaCode, cityName)
+		buff := formatBuffZoneCityKey(formatBuff, areaCode, cityName)
 
 		dict[sarr[1]] = &Attribute{
 			Isp:           isp,
 			MainIspName:   &mainIspName,
 			SubIspName:    subIspName,
-			CityAttribute: zDict[stringUtil.NoCopyBytes2String(formatBuff)].CityAttribute,
+			CityAttribute: zDict[stringUtil.NoCopyBytes2String(buff)].CityAttribute,
 		}
 	}
 
@@ -128,19 +128,20 @@ func InitFromReader(srcReader io.Reader) error {
 
 var formatBuff []byte = make([]byte, 0, 1024)
 
-func formatBuffZoneCityKey(buff []byte, zoneCode int, city string) {
+func formatBuffZoneCityKey(buff []byte, zoneCode int, city string) []byte {
 	buff = buff[:0]
 	buff = strconv.AppendInt(buff, int64(zoneCode), 10)
 	buff = append(buff, ':')
 	buff = append(buff, stringUtil.NoCopyString2Bytes(city)...)
+	return buff
 }
 
 func insertZdict(dict map[string]*CityAttributeWithCounter, bean CityAttribute) map[string]*CityAttributeWithCounter {
-	formatBuffZoneCityKey(formatBuff, bean.ZoneCode, bean.City)
-	key := stringUtil.NoCopyBytes2String(formatBuff)
+	buff := formatBuffZoneCityKey(formatBuff, bean.ZoneCode, bean.City)
+	key := stringUtil.NoCopyBytes2String(buff)
 	_, find := dict[key]
 	if !find {
-		key = string(formatBuff)
+		key = string(buff)
 		dict[key] = &CityAttributeWithCounter{
 			CityAttribute: &bean,
 			MatchCount:    0,
