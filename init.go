@@ -107,12 +107,12 @@ func InitFromReader(srcReader io.Reader) error {
 	ndict := make(map[int]*CityAttributeWithCounter, len(zDict))
 	for _, v1 := range zDict {
 		zcode := v1.ZoneCode
-		v2, find := ndict[zcode]
+		_, find := ndict[zcode]
 		if !find {
 			ndict[zcode] = v1
 			continue
 		}
-		if ndict[zcode].MatchCount >= v2.MatchCount {
+		if ndict[zcode].MatchCount >= v1.MatchCount {
 			continue
 		}
 		ndict[zcode] = v1

@@ -1,6 +1,10 @@
 package gphoneAttr
 
-import "testing"
+import (
+	"fmt"
+	"strings"
+	"testing"
+)
 
 func TestGetPhoneProperty(t *testing.T) {
 	p, err := GetPhoneProperty("86015986400528")
@@ -31,6 +35,16 @@ func TestGetPhoneProperty(t *testing.T) {
 	p, err = GetPhoneProperty("020110")
 	if err != nil || p.Type != LINEPHONE_NUMBER || p.AreaCode != 20 || p.FullNumber != "020110" {
 		t.FailNow()
+	}
+	p, err = GetPhoneProperty("0851114")
+	if err != nil || p.Type != LINEPHONE_NUMBER || p.AreaCode != 851 || p.FullNumber != "0851114" {
+		t.FailNow()
+	}
+
+	p, err = GetPhoneProperty("0851114")
+	if err == nil && p.Type == LINEPHONE_NUMBER &&
+		len(p.FullNumber) >= 5 && len(p.FullNumber) <= 7 && strings.HasSuffix(p.FullNumber, "114") {
+		fmt.Printf("")
 	}
 
 	p, err = GetPhoneProperty("20961235")
